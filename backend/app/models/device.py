@@ -10,7 +10,7 @@ class AudioDevice(Base):
 
     id = Column(String(50), primary_key=True)
     model_name = Column(String(100), nullable=False)   # e.g., Shure Axient Digital AD4Q
-    channel_name = Column(String(100), nullable=False) # e.g., Lead Vocal (Podium)
+    channel_name = Column(String(100), nullable=False) # e.g., Lead Vocal (Wireless Handheld)
     frequency_mhz = Column(Float, default=518.250)      # UHF frequency in MHz
     ip_address = Column(String(50), default="192.168.1.101")
     dante_channel = Column(Integer, default=1)
@@ -59,7 +59,7 @@ class TelemetrySnapshot(Base):
     packet_loss_rate = Column(Float, default=0.0)      # Percentage 0.0 - 100.0
     network_jitter_ms = Column(Float, default=0.2)     # Milliseconds
     
-    # Live Frequency Spectrum Bins (16 FFT band magnitudes)
+    # Live Synthetic Frequency Spectrum Bins (16 FFT band magnitudes)
     spectrum_bins = Column(JSON, default=list)
 
     device = relationship("AudioDevice", back_populates="telemetry")
@@ -116,8 +116,13 @@ class DiagnosticReport(Base):
     remediation_plan = Column(Text, nullable=False)
     recommended_frequency_mhz = Column(Float, nullable=True)
     recommended_pad_db = Column(Integer, nullable=True)
-    ai_confidence = Column(Float, default=0.95)
+    diagnostic_confidence = Column(Float, default=0.98) # Calibrated rule match confidence
+    
+    # Verification & Recovery
     applied = Column(Boolean, default=False)
+    verification_status = Column(String(20), default="PENDING") # PENDING, VERIFIED, FAILED
+    measured_before = Column(JSON, default=dict)
+    measured_after = Column(JSON, default=dict)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     def to_dict(self):
@@ -129,7 +134,11 @@ class DiagnosticReport(Base):
             "remediation_plan": self.remediation_plan,
             "recommended_frequency_mhz": self.recommended_frequency_mhz,
             "recommended_pad_db": self.recommended_pad_db,
-            "ai_confidence": self.ai_confidence,
+            "diagnostic_confidence": self.diagnostic_confidence,
+            "ai_confidence": self.diagnostic_confidence,
             "applied": self.applied,
+            "verification_status": self.verification_status,
+            "measured_before": self.measured_before or {},
+            "measured_after": self.measured_after or {},
             "created_at": self.created_at.isoformat() if self.created_at else None
         }
