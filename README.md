@@ -113,10 +113,12 @@ flowchart LR
 - Oscilloscope waveform tracking acoustic dynamics with instantaneous color-coded transitions to red upon pre-amp overload.
 - Multi-segment LED VU meter with peak-hold indicators.
 
-### 3. AI Diagnostic & Automated Remediation Engine
-- **RF Carrier Fading / Intermod**: Detects RSSI drops below -80 dBm and SNR degradation (<10 dB). Analyzes clean UHF spectrum channels and recommends an intermodulation-free frequency (e.g. `548.750 MHz`).
-- **ADC Preamp Clipping**: Detects sustained `0.0 dBFS` clipping. Recommends engaging the `-12 dB` analog hardware attenuator pad.
-- **Single-Click Healing**: Operators can click **[⚡ Apply AI Recommended Fix]** to re-tune hardware parameters and restore nominal performance in under 100 milliseconds.
+### 3. Rule-Based Diagnostic & Verified Automated Remediation Engine
+- **RF Carrier Fading / Intermod**: Detects RSSI drops below `-80.0 dBM` and SNR degradation (`< 10.0 dB`). Recommends an intermodulation-free UHF backup channel (`548.750 MHz`).
+- **ADC Preamp Clipping**: Detects sustained `0.0 dBFS` clipping or ADC full-scale saturation (`>= -0.2 dBFS`). Recommends engaging the `-12 dB` analog hardware attenuator pad.
+- **Dante AoIP PTP v2 Jitter**: Detects IEEE 1588 clock jitter exceeding the unified `2.0 ms` broadcast tolerance threshold. Generates a root cause analysis report recommending QoS DiffServ / DSCP 46 queue verification and secondary Dante link failover.
+- **Alert Deduplication Cooldown**: Throttles repeated alerts within a 10-second sliding window to avoid database and WebSocket stream exhaustion.
+- **Post-Remediation Verification**: When an operator applies a recommended fix, the engine does not blindly mark the hardware healthy. It takes a fresh post-remediation telemetry snapshot (`measured_after`), validates metrics against critical thresholds, and confirms `verification_status = "VERIFIED"` before restoring the device to `OPTIMAL`.
 
 ---
 
@@ -209,18 +211,16 @@ Access the application dashboard at `http://localhost:3000`.
 
 ## 📋 Running Automated Tests
 
-Run the backend unit, integration, and diagnostic test suite:
+SonicPulse includes a 10-suite unit and integration test framework covering physics simulation, diagnostic trigger thresholds, alert deduplication cooldown, schema validation (422/404 handling), and end-to-end post-remediation verification:
 
 ```bash
-# Windows PowerShell:
-$env:PYTHONPATH = (Get-Location).Path
-.\backend\.venv\Scripts\pytest backend/tests/ -v
+# Windows:
+.\backend\.venv\Scripts\pytest -v
 
 # Linux/macOS:
-# export PYTHONPATH=$(pwd)
-# pytest backend/tests/ -v
+# pytest -v
 ```
-*(All 5 test suites pass cleanly with 100% success rate).*
+*(All 10 test suites pass cleanly with 100% success rate, verified via `pytest.ini`).*
 
 ---
 
