@@ -4,6 +4,7 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect
 from sqlalchemy.orm import Session
 
+from backend.app.core.config import settings
 from backend.app.core.database import get_db, SessionLocal
 from backend.app.models.device import AudioDevice, SystemAlert, DiagnosticReport, TelemetrySnapshot
 from backend.app.schemas.device import (
@@ -28,14 +29,14 @@ def get_devices(db: Session = Depends(get_db)):
 def get_device(device_id: str, db: Session = Depends(get_db)):
     device = db.query(AudioDevice).filter(AudioDevice.id == device_id).first()
     if not device:
-        raise HTTPException(status_code=404, detail="Audio device not found")
+        raise HTTPException(status_code=404, detail=f"Audio device '{device_id}' not found")
     return device.to_dict()
 
 @router.post("/devices/{device_id}/action", response_model=DeviceResponse)
 def update_device_action(device_id: str, action: DeviceActionRequest, db: Session = Depends(get_db)):
     device = db.query(AudioDevice).filter(AudioDevice.id == device_id).first()
-    if not device:
-        raise HTTPException(status_code=404, detail="Audio device not found")
+    if not device or not device_simulator.has_device(device_id):
+        raise HTTPException(status_code=404, detail=f"Audio device '{device_id}' not found")
 
     if action.pad_db is not None:
         device.pad_db = action.pad_db
@@ -55,10 +56,10 @@ def update_device_action(device_id: str, action: DeviceActionRequest, db: Sessio
 @router.post("/devices/{device_id}/simulate")
 def trigger_device_simulation(device_id: str, req: TriggerAnomalyRequest, db: Session = Depends(get_db)):
     device = db.query(AudioDevice).filter(AudioDevice.id == device_id).first()
-    if not device:
-        raise HTTPException(status_code=404, detail="Audio device not found")
+    if not device or not device_simulator.has_device(device_id):
+        raise HTTPException(status_code=404, detail=f"Audio device '{device_id}' not found")
 
-    device_simulator.trigger_anomaly(device_id, req.anomaly_type)
+    device_simulator.trigger_anomaly(device_id, req.anomaly_type.value)
     
     # Run instantaneous diagnostic check
     snapshot = device_simulator.generate_snapshot(device_id)
@@ -67,7 +68,7 @@ def trigger_device_simulation(device_id: str, req: TriggerAnomalyRequest, db: Se
     return {
         "status": "anomaly_triggered",
         "device_id": device_id,
-        "anomaly": req.anomaly_type,
+        "anomaly": req.anomaly_type.value,
         "diagnostic_report_created": report.to_dict() if report else None
     }
 
@@ -90,14 +91,15 @@ def apply_diagnostic_remediation(report_id: str, db: Session = Depends(get_db)):
 
 @router.get("/telemetry/live")
 def get_live_telemetry():
-    device_ids = ["shure-axient-ch1", "shure-axient-ch2", "shure-mxa920-conf", "shure-slxd-podium"]
+    device_ids = list(device_simulator.devices.keys())
     return [device_simulator.generate_snapshot(did) for did in device_ids]
 
 # Real-time streaming WebSocket
 @router.websocket("/ws/telemetry")
 async def websocket_telemetry(websocket: WebSocket):
     await websocket.accept()
-    device_ids = ["shure-axient-ch1", "shure-axient-ch2", "shure-mxa920-conf", "shure-slxd-podium"]
+    device_ids = list(device_simulator.devices.keys())
+    interval_sec = settings.TELEMETRY_INTERVAL_MS / 1000.0
     try:
         while True:
             db = SessionLocal()
@@ -105,7 +107,7 @@ async def websocket_telemetry(websocket: WebSocket):
                 snapshots = []
                 for did in device_ids:
                     s = device_simulator.generate_snapshot(did)
-                    # Check for anomalies on the fly
+                    # Check for anomalies on the fly (with alert deduplication cooldown)
                     ai_diagnostics.analyze_snapshot(db, s)
                     snapshots.append(s)
 
@@ -115,7 +117,7 @@ async def websocket_telemetry(websocket: WebSocket):
                 }))
             finally:
                 db.close()
-            await asyncio.sleep(0.25) # 4 updates per second (250ms)
+            await asyncio.sleep(interval_sec)
     except WebSocketDisconnect:
         pass
     except Exception:

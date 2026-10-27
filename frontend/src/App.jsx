@@ -346,7 +346,7 @@ export default function App() {
                   <div className="report-header">
                     <span className="report-reason-badge">{report.trigger_reason}</span>
                     <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>
-                      AI Confidence: {Math.round(report.ai_confidence * 100)}%
+                      Confidence: {Math.round((report.diagnostic_confidence || report.ai_confidence || 0.95) * 100)}%
                     </span>
                   </div>
 
@@ -366,7 +366,7 @@ export default function App() {
                   ) : (
                     <div style={{ display: "flex", alignItems: "center", gap: "6px", color: "var(--shure-green)", fontSize: "12px", fontWeight: 700 }}>
                       <CheckCircle2 size={16} />
-                      Remediation Verified &amp; Applied
+                      {report.verification_status === "VERIFIED" ? "Verified & Applied" : "Remediation Applied"}
                     </div>
                   )}
                 </div>
