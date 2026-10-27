@@ -14,12 +14,12 @@
 <br/>
 
 <p align="center">
-  <strong>An enterprise full-stack platform for monitoring mission-critical networked audio hardware (Shure Axient Digital, MXA920, SLX-D), streaming high-frequency RF &amp; DSP telemetry via WebSockets, and autonomously diagnosing RF fading, audio preamp clipping, and Dante AoIP network jitter with one-click automated remediation.</strong>
+  <strong>An enterprise-grade full-stack platform engineered to monitor mission-critical networked audio hardware fleets (Shure Axient Digital, MXA920, SLX-D), stream high-frequency RF and DSP telemetry over full-duplex WebSockets, and autonomously diagnose RF fading, pre-amplifier clipping, and Dante AoIP network jitter with sub-100ms automated remediation.</strong>
 </p>
 
 ---
 
-### 🖥️ Live Telemetry &amp; Diagnostic Console Preview
+### 🖥️ Live Telemetry &amp; Diagnostic Platform Console
 
 <img src="docs/assets/dashboard-preview.svg" alt="SonicPulse Platform Dashboard" width="100%"/>
 
@@ -29,12 +29,33 @@
 
 ## 📌 Executive Summary
 
-Live performance venues, broadcast studios, and corporate boardrooms depend on networked wireless audio ecosystems (such as **Shure Axient Digital** and **Microflex Advance**). Audio engineers face three critical failure modes during live production:
-1. **RF Multipath Interference & Carrier Collapse**: Cellular towers (5G/LTE) or competing transmitters causing sudden RF signal-to-noise ratio (SNR) drops, leading to audible digital audio mutes.
-2. **Acoustic Overload & Preamp ADC Clipping**: Dynamic vocal spikes exceeding pre-amp headroom, causing harsh digital square-wave distortion (>0 dBFS).
-3. **Dante / AES67 AoIP Clock Jitter**: Precision Time Protocol (PTP v2) synchronization slips across Gigabit switches resulting in buffer under-runs.
+Live performance venues, broadcast networks, and corporate boardrooms depend on mission-critical networked audio ecosystems such as **Shure Axient Digital**, **Microflex Advance MXA920**, and **SLX-D**. In live production environments, audio engineers face three primary failure modes:
 
-**SonicPulse** solves this by establishing a high-frequency telemetry pipeline and an automated **AI Diagnostic & Remediation Engine** that detects anomalies in real-time, calculates clean frequency backups, and allows single-click hardware remediation before audio dropouts occur.
+1. **RF Multipath Interference & Carrier Collapse**: Crowded UHF spectrum, 5G cellular downlink carriers, or multi-path phase cancellations can cause the carrier Signal-to-Noise Ratio (SNR) to collapse, resulting in sudden digital audio muting.
+2. **Acoustic Overload & Preamp ADC Clipping**: High Sound Pressure Level (SPL) vocal transients that exceed pre-amplifier analog headroom cause harsh digital square-wave clipping (>0 dBFS) and harmonic distortion.
+3. **Dante / AES67 AoIP Network Jitter**: Synchronization clock drift across Gigabit switches (Precision Time Protocol PTP v2) exceeding 2.0 ms results in packet buffer under-runs and audible audio clicks.
+
+**SonicPulse** solves this challenge by delivering a high-frequency real-time telemetry streaming pipeline and an automated **AI Diagnostic & Self-Healing Engine** that continuously detects anomalies, calculates intermodulation-free UHF backup channels, and executes single-click hardware remediation before audio dropouts occur.
+
+---
+
+## 📊 Live Audio Spectrum &amp; Oscilloscope Visualizer
+
+SonicPulse features a hardware-accelerated **60 FPS HTML5 Canvas engine** that visualizes uncompressed 48 kHz / 24-bit audio signals across 16 FFT frequency spectrum bins and real-time sine oscilloscope waveforms:
+
+<div align="center">
+  <img src="docs/assets/spectrum-analyzer-preview.svg" alt="Live 16-Band FFT Audio Spectrum & Oscilloscope" width="100%"/>
+</div>
+
+---
+
+## ⚡ Automated AI Diagnostic &amp; Self-Healing Flow
+
+When an RF drop or audio clip occurs, the AI diagnostic engine detects the threshold violation within 250 milliseconds, diagnoses the root cause, and synthesizes a hardware remediation plan:
+
+<div align="center">
+  <img src="docs/assets/diagnostic-flow-preview.svg" alt="AI Diagnostic and Auto-Remediation Workflow" width="100%"/>
+</div>
 
 ---
 
@@ -80,17 +101,17 @@ flowchart LR
 
 ## 🚀 Key Technical Features
 
-### 1. High-Frequency Real-Time Telemetry Stream (WebSockets)
-- Streams 4 updates/sec (250ms interval) per audio node over full-duplex WebSockets.
-- Real-time metrics tracked:
-  - **RF Metrics**: RSSI (-90 dBm to -30 dBm), SNR (dB), UHF Carrier Frequency (MHz).
-  - **Audio DSP Metrics**: Peak level in dBFS (-60 dBFS to 0 dBFS), clip state, Crest factor.
-  - **Network & Clock**: Dante / AES67 packet loss rate (%) and PTP network jitter (ms).
-  - **Battery Telemetry**: Charge percentage and remaining runtime in minutes.
+### 1. High-Frequency Real-Time Telemetry Stream (WebSockets @ 4 Hz)
+- Full-duplex WebSocket connection streaming real-time telemetry snapshots every 250ms per audio channel.
+- **RF Wireless Telemetry**: RSSI signal strength (-90 dBm to -30 dBm), Carrier SNR (dB), UHF carrier frequency (MHz).
+- **Audio DSP Telemetry**: Peak level in dBFS (-60 dBFS to 0 dBFS), clip state flag, Crest factor.
+- **Network & Clock Sync**: Dante / AES67 AoIP packet drop percentage and PTP v2 network jitter in milliseconds.
+- **Battery & Power**: Charge percentage and calculated runtime remaining in minutes.
 
 ### 2. 60 FPS HTML5 Canvas FFT Audio Spectrum & Oscilloscope
 - Hardware-accelerated canvas visualizer rendering 16 FFT frequency bins in real time.
-- Integrated oscilloscope sine wave tracking instantaneous SPL dynamics with instant color-coded transition to red upon pre-amp overload.
+- Oscilloscope waveform tracking acoustic dynamics with instantaneous color-coded transitions to red upon pre-amp overload.
+- Multi-segment LED VU meter with peak-hold indicators.
 
 ### 3. AI Diagnostic & Automated Remediation Engine
 - **RF Carrier Fading / Intermod**: Detects RSSI drops below -80 dBm and SNR degradation (<10 dB). Analyzes clean UHF spectrum channels and recommends an intermodulation-free frequency (e.g. `548.750 MHz`).
@@ -154,7 +175,7 @@ python -m venv .venv
 pip install -r requirements.txt
 python -m uvicorn backend.app.main:app --reload --port 8000
 ```
-Backend API will be live at: `http://localhost:8000` (Interactive API docs at `http://localhost:8000/docs`).
+Backend API will be live at: `http://localhost:8000` (Interactive API documentation at `http://localhost:8000/docs`).
 
 #### 2. Frontend Setup
 ```bash
