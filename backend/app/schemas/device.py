@@ -1,9 +1,15 @@
-from typing import Optional, List
-from pydantic import BaseModel
+from enum import Enum
+from typing import Optional, List, Literal
+from pydantic import BaseModel, Field
+
+class AnomalyTypeEnum(str, Enum):
+    RF_COLLAPSE = "RF_COLLAPSE"
+    PREAMP_CLIPPING = "PREAMP_CLIPPING"
+    DANTE_JITTER = "DANTE_JITTER"
 
 class DeviceActionRequest(BaseModel):
-    pad_db: Optional[int] = None
-    frequency_mhz: Optional[float] = None
+    pad_db: Optional[Literal[0, -12]] = Field(None, description="Attenuation pad in dB (0 or -12)")
+    frequency_mhz: Optional[float] = Field(None, ge=470.0, le=698.0, description="UHF tuning frequency in MHz")
     is_muted: Optional[bool] = None
 
 class DeviceResponse(BaseModel):
@@ -50,9 +56,13 @@ class DiagnosticResponse(BaseModel):
     remediation_plan: str
     recommended_frequency_mhz: Optional[float]
     recommended_pad_db: Optional[int]
-    ai_confidence: float
+    diagnostic_confidence: float
+    ai_confidence: Optional[float] = None
     applied: bool
+    verification_status: str
+    measured_before: dict
+    measured_after: dict
     created_at: Optional[str]
 
 class TriggerAnomalyRequest(BaseModel):
-    anomaly_type: str # RF_COLLAPSE, PREAMP_CLIPPING, DANTE_JITTER
+    anomaly_type: AnomalyTypeEnum
